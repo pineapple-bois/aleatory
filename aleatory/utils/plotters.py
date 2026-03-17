@@ -268,7 +268,7 @@ def draw_paths_horizontal(
             fig.suptitle(suptitle)
 
         if title is None:
-            ax1.set_title("Monte Carlo Simulated Paths $\{{X_t, t \in [t_0, T]\}}$")
+            ax1.set_title(r"Monte Carlo Simulated Paths $\{{X_t, t \in [t_0, T]\}}$")
         else:
             ax1.set_title(title)
         ax1.set_xlabel(xlabel)

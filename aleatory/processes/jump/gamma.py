@@ -34,11 +34,9 @@ class GammaProcess(SPAnalyticalMarginals):
     """
 
     def __init__(self, mu=1.0, nu=1.0, T=10.0, rng=None):
-        """
-
+        r"""
         :parameter float mu: the parameter :math:`\mu` in the above definition
         :parameter float nu: the parameter :math:`\nu` in the above definition
-
         """
         super().__init__(T=T, rng=rng, initial=0.0)
         self.mu = mu

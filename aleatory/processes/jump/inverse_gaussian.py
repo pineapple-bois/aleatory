@@ -25,7 +25,7 @@ class InverseGaussian(SPAnalytical):
     """
 
     def __init__(self, mu=1.0, scale=1.0, T=1.0, rng=None):
-        """
+        r"""
         :parameter double mu: the :math:`\mu>0` which defines the mean of the increments of the Inverse Gaussian process.
         :parameter double scale: the :math:`\eta>0` which defines the scale of the increments of the Inverse Gaussian process
         :parameter numpy.random.Generator rng: a custom random number generator
@@ -34,7 +34,7 @@ class InverseGaussian(SPAnalytical):
         self.mu = mu
         self.scale = scale
         self.mean = lambda x: self.mu * x
-        self.name = f"Inverse Gaussian process $X(\mu={self.mu}, \eta={self.scale})$"
+        self.name = f"Inverse Gaussian process $X(\\mu={self.mu}, \\eta={self.scale})$"
         self.n = None
         self._ms = None
 

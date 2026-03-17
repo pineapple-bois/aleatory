@@ -35,7 +35,7 @@ class PoissonProcess(BaseProcess):
     """
 
     def __init__(self, rate=1.0, rng=None):
-        """
+        r"""
         :parameter float rate: the intensity rate :math:`\lambda>0`,
         :parameter numpy.random.Generator rng: a custom random number generator
         """

@@ -39,7 +39,7 @@ class Vasicek(SPEulerMaruyama):
     """
 
     def __init__(self, theta=1.0, mu=3.0, sigma=0.5, initial=1.0, T=1.0, rng=None):
-        """
+        r"""
         :param float theta: the parameter :math:`\theta` in the above SDE
         :param float mu: the parameter :math:`\mu` in the above SDE
         :param float sigma: the parameter :math:`\sigma>0` in the above SDE

@@ -38,7 +38,7 @@ class MixedPoissonProcess(BaseProcess):
     """
 
     def __init__(self, intensity, intensity_args=None, intensity_kwargs=None, rng=None):
-        """
+        r"""
         :parameter callable intensity: a callable function which defines the structure distribution :math:`\Lambda`
         :parameter intensity_args: the arguments to be passed to the intensity function
         :parameter intensity_kwargs: the keyword arguments to be passed to the intensity function
@@ -196,18 +196,18 @@ if __name__ == "__main__":
         return g.rvs()
 
     p1 = MixedPoissonProcess(intensity=intensity_gamma)
-    t1 = "Mixed Poisson Process with $\\Lambda \sim \Gamma(1.0, 1.0)$"
+    t1 = r"Mixed Poisson Process with $\Lambda \sim \Gamma(1.0, 1.0)$"
     p2 = MixedPoissonProcess(intensity=intensity_gamma, intensity_kwargs={"a": 3.0})
-    t2 = "Mixed Poisson Process with $\\Lambda \sim \Gamma(3.0, 1.0)$"
+    t2 = r"Mixed Poisson Process with $\Lambda \\sim \Gamma(3.0, 1.0)$"
 
     def intensity_chi2(df=3.0):
         rv = chi2(df=df)
         return rv.rvs()
 
     p3 = MixedPoissonProcess(intensity=intensity_chi2)
-    t3 = "Mixed Poisson Process with $\\Lambda \sim \\chi^2(3.0)$"
+    t3 = r"Mixed Poisson Process with $\Lambda \sim \chi^2(3.0)$"
     p4 = MixedPoissonProcess(intensity=intensity_chi2, intensity_kwargs={"df": 20})
-    t4 = "Mixed Poisson Process with $\\Lambda \sim \\chi^2(20.0)$"
+    t4 = r"Mixed Poisson Process with $\Lambda \sim \chi^2(20.0)$"
 
     qs = "https://raw.githubusercontent.com/quantgirluk/matplotlib-stylesheets/main/quant-pastel-light.mplstyle"
     plt.style.use(qs)

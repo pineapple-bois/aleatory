@@ -42,7 +42,7 @@ class GaltonWatson(SPAnalytical):
     """
 
     def __init__(self, mu=1.0, rng=None):
-        """
+        r"""
         :parameter float mu: the parameter :math:`\mu>0` in the above definition
         :parameter numpy.random.Generator rng: a custom random number generator
         """
@@ -55,7 +55,7 @@ class GaltonWatson(SPAnalytical):
         self.generations = 0
         self.times = None
         self.name = (
-            f"Galton-Watson Process with Poisson Branching\n $Z_i\sim Poi(${self.mu}$)$"
+            rf"Galton-Watson Process with Poisson Branching\n $Z_i\sim \operatorname{{Poi}}(${self.mu}$)$"
         )
 
     def _sample_galton_watson(self, generations=None):

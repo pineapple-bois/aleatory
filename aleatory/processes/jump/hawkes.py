@@ -58,7 +58,7 @@ class HawkesProcess(InhomogeneousPoissonProcess):
         self.beta = beta
         self.name = (
             f"Hawkes Process $N(t)$ with conditional Intensity process\n"
-            f"$\\lambda_t^{{\star}} = {self.mu} + \sum_{{T_i < t}} {self.alpha}\exp(-{self.beta}(t-T_i)) $\n"
+            f"$\\lambda_t^{{\\star}} = {self.mu} + \\sum_{{T_i < t}} {self.alpha}\\exp(-{self.beta}(t-T_i)) $\n"
         )
         self.T = None
         self.N = None
