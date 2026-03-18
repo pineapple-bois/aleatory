@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from matplotlib.gridspec import GridSpec
 from scipy.stats import skellam
 
 from aleatory.processes.base import BaseProcess
@@ -54,7 +56,7 @@ class ContinuousTimeRandomWalk(BaseProcess):
         self.rate_down = rate_down
         self.name = (
             rf"Continuous--Time Random Walk "
-            rf"$(\lambda_+={self.rate_up}$, $\lambda_-={self.rate_down})$"
+            rf"$(\lambda_+={self.rate_up}$,\ $\lambda_-={self.rate_down})$"
         )
         self.T = None
         self.N = None
@@ -144,6 +146,9 @@ class ContinuousTimeRandomWalk(BaseProcess):
             raise TypeError("Time must be numeric")
         if t < 0:
             raise ValueError("Time must be nonnegative")
+        # At fixed time t, X_t is integer-valued on Z, so its marginal law is discrete.
+        # For constant jump rates, X_t is the difference of two independent Poisson variables,
+        # hence Skellam-distributed.
         return skellam(self.rate_up * t, self.rate_down * t)
 
     def marginal_expectation(self, times):
@@ -205,6 +210,161 @@ class ContinuousTimeRandomWalk(BaseProcess):
             ax.set_ylabel("$X(t)$")
             if T is not None:
                 ax.set_xlim(right=T)
+            plt.show()
+
+        return fig
+
+    def draw(
+            self,
+            N,
+            T=10.0,
+            x0=0,
+            style="seaborn-v0_8-whitegrid",
+            colormap="viridis",
+            envelope=False,
+            marginal=True,
+            mode="steps",
+            colorspos=None,
+            title=None,
+            suptitle=None,
+            **fig_kw,
+    ):
+        check_positive_integer(N, "N")
+        check_positive_number(T, "Time")
+
+        chart_suptitle = suptitle if suptitle is not None else self.name
+        self.simulate(N=N, T=T, x0=x0)
+        paths = self.paths
+
+        times_grid = np.linspace(0.0, T, 400)
+        expectations = self.marginal_expectation(times_grid) + x0
+        variances = self.marginal_variance(times_grid)
+        stds = np.sqrt(variances)
+        lower = expectations - 2.0 * stds
+        upper = expectations + 2.0 * stds
+
+        terminal_values = np.array([states[-1] for _, states in paths], dtype=int)
+        marginalT = self.get_marginal(T)
+
+        cm = plt.colormaps[colormap]
+        n_bins = max(10, int(np.sqrt(N)))
+        col = np.linspace(0, 1, n_bins, endpoint=True)
+
+        with plt.style.context(style):
+            if marginal:
+                fig = plt.figure(**fig_kw)
+                gs = GridSpec(1, 5)
+                ax1 = fig.add_subplot(gs[:4])
+                ax2 = fig.add_subplot(gs[4:], sharey=ax1)
+
+                n, bins, patches = ax2.hist(
+                    terminal_values,
+                    bins=n_bins,
+                    orientation="horizontal",
+                    density=True,
+                )
+
+                for c, p in zip(col[: len(patches)], patches):
+                    plt.setp(p, "facecolor", cm(c))
+
+                my_bins = pd.cut(
+                    terminal_values,
+                    bins=bins,
+                    labels=range(len(bins) - 1),
+                    include_lowest=True,
+                )
+                colors = [col[int(b)] for b in my_bins]
+
+                ks = np.arange(
+                    int(marginalT.ppf(0.001)),
+                    int(marginalT.ppf(0.999)) + 1,
+                )
+                ax2.plot(
+                    marginalT.pmf(ks),
+                    ks,
+                    "o",
+                    linestyle="",
+                    color="maroon",
+                    markersize=2,
+                    label="$X_T$ pmf",
+                )
+                ax2.axhline(
+                    y=marginalT.mean(),
+                    linestyle="--",
+                    lw=1.75,
+                    label="$E[X_T]$",
+                )
+                ax2.legend()
+                plt.setp(ax2.get_yticklabels(), visible=False)
+                ax2.set_title("$X_T$")
+
+                for i, (times, states) in enumerate(paths):
+                    color = cm(colors[i])
+
+                    if mode == "points":
+                        ax1.scatter(times, states, color=color, s=10)
+                    elif mode == "steps":
+                        ax1.step(times, states, color=color, where="post", linewidth=1.25)
+                    elif mode == "points+steps":
+                        ax1.step(times, states, color=color, where="post", linewidth=1.25)
+                        ax1.plot(times, states, "o", color=color, markersize=4)
+                    else:
+                        raise ValueError(
+                            "mode can only take values 'points', 'steps' or 'points+steps'"
+                        )
+
+                ax1.plot(times_grid, expectations, "--", lw=1.75, label="$E[X_t]$")
+                ax1.legend()
+
+                if envelope:
+                    ax1.fill_between(times_grid, upper, lower, alpha=0.20, color="silver")
+
+                plt.subplots_adjust(wspace=0.2, hspace=0.5)
+
+            else:
+                fig, ax1 = plt.subplots(**fig_kw)
+
+                if colorspos is not None:
+                    colors = []
+                    for times, states in paths:
+                        idx = min(colorspos, len(states) - 1)
+                        denom = max(1.0, np.max(np.abs(states)))
+                        colors.append((states[idx] / denom + 1.0) / 2.0)
+                else:
+                    _, bins = np.histogram(terminal_values, bins=n_bins)
+                    my_bins = pd.cut(
+                        terminal_values,
+                        bins=bins,
+                        labels=range(len(bins) - 1),
+                        include_lowest=True,
+                    )
+                    colors = [col[int(b)] for b in my_bins]
+
+                for i, (times, states) in enumerate(paths):
+                    ax1.step(
+                        times,
+                        states,
+                        color=cm(colors[i]),
+                        lw=0.9,
+                        where="post",
+                    )
+
+                ax1.plot(times_grid, expectations, "--", lw=1.75, label="$E[X_t]$")
+                ax1.legend()
+
+                if envelope:
+                    ax1.fill_between(times_grid, upper, lower, color="lightgray", alpha=0.25)
+
+            fig.suptitle(chart_suptitle)
+            ax1.set_xlim(right=T)
+
+            if title is None:
+                ax1.set_title(r"Simulated Paths $X_t, t \leq T$")
+            else:
+                ax1.set_title(title)
+
+            ax1.set_xlabel("$t$")
+            ax1.set_ylabel("$X(t)$")
             plt.show()
 
         return fig
