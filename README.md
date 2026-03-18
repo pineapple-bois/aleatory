@@ -8,6 +8,155 @@
 - [Documentation](https://aleatory.readthedocs.io/en/latest/)
 - 🆕 [Gallery of Stochastic Processes](https://aleatory.readthedocs.io/en/latest/auto_examples/index.html) 🖼️
 
+-----
+
+## Implemented in this fork
+
+
+### 1. `processes.jump.ContinuousTimeRandomWalk`
+
+This class implements a nearest-neighbour continuous-time jump process on the full integer lattice $\mathbb{Z}$. The process jumps upward with rate $\lambda$ and downward with rate $\mu$, so it supports both symmetric and biased walks. For constant left and right jump rates, the marginal law at fixed time is given by the Skellam distribution.
+
+<p align="center">
+  <img src="docs/README_figs/CTRW_biased_x0=5.png" width="900" />
+</p>
+
+**Signature**
+
+```python
+from aleatory.processes import ContinuousTimeRandomWalk
+
+ContinuousTimeRandomWalk(
+    rate_up=0.5,
+    rate_down=0.5,
+    initial=0,
+    rng=None,
+)
+```
+
+**Arguments**
+
+- `rate_up`: right-jump rate $\lambda \geq 0$
+- `rate_down`: left-jump rate $\mu \geq 0$
+- `initial`: initial state $x_0 \in \mathbb{Z}$
+- `rng`: optional NumPy random number generator
+
+At least one of `rate_up` or `rate_down` must be positive.
+
+**Implemented core methods**
+
+- `sample(T=...)`  
+  simulate a single path up to time `T`
+
+- `simulate(N=..., T=...)`  
+  simulate `N` independent paths up to time `T`
+
+- `get_marginal(t)`  
+  return the exact marginal law at time `t` as a SciPy Skellam random variable
+
+- `marginal_expectation(times)`  
+  return the exact mean function
+
+- `marginal_variance(times)`  
+  return the exact variance function
+
+- `plot(...)`  
+  produce a basic path plot
+
+- `draw(...)`  
+  produce an ensemble figure with simulated paths, terminal histogram, exact marginal overlay, and mean behaviour
+
+**Implementation notes**
+
+- paths are represented as `(times, states)` pairs
+- the waiting time between jumps is exponential with parameter $\lambda + \mu$
+- at each jump, the process moves by exactly $+1$ or $-1$
+- for constant rates, the process can be represented as the difference of two independent Poisson processes
+- the fixed-time marginal law is implemented via `scipy.stats.skellam`
+
+
+### 2. `processes.jump.ReflectingContinuousTimeRandomWalk`
+
+This class implements a nearest-neighbour continuous-time jump process on an integer state space with one-sided or two-sided reflecting boundaries. In the interior, the process jumps upward with rate $\lambda$ and downward with rate $\mu$. At a reflecting boundary, any jump that would leave the admissible state space is suppressed by setting the outward jump rate to zero.
+
+<p align="center">
+  <img src="docs/README_figs/ReflectingCTRW_biasedup.png" width="900" />
+</p>
+
+**Signature**
+
+```python
+from aleatory.processes import ReflectingContinuousTimeRandomWalk
+
+ReflectingContinuousTimeRandomWalk(
+    rate_up=0.5,
+    rate_down=0.5,
+    initial=0,
+    lower=None,
+    upper=None,
+    rng=None,
+)
+```
+
+**Arguments**
+
+- `rate_up`: right-jump rate $\lambda \geq 0$
+- `rate_down`: left-jump rate $\mu \geq 0$
+- `initial`: initial state $x_0 \in \mathbb{Z}$
+- `lower`: optional lower reflecting boundary
+- `upper`: optional upper reflecting boundary
+- `rng`: optional NumPy random number generator
+
+At least one of `lower` or `upper` must be specified. If both are specified, the class requires `lower < upper`, and the initial state must lie inside the admissible state space.
+
+**Implemented core methods**
+
+- `sample(T=...)`  
+  simulate a single path up to time `T`
+
+- `simulate(N=..., T=...)`  
+  simulate `N` independent paths up to time `T`
+
+- `plot(...)`  
+  produce a basic path plot
+
+- `draw(...)`  
+  produce an ensemble figure using empirical summaries from simulated paths, including terminal histograms and empirical mean behaviour
+
+**Implementation notes**
+
+- paths are represented as `(times, states)` pairs
+- reflection is implemented through state-dependent local rates
+- at a lower reflecting boundary, the downward jump rate is set to zero
+- at an upper reflecting boundary, the upward jump rate is set to zero
+
+
+### Tests
+
+1. `ReflectingContinuousTimeRandomWalk`
+
+```text
+tests/test_reflecting_cont_time_random_walk.py
+```
+
+Covers:
+
+- constructor validation
+- path structure invariants
+- state-space invariants
+- reflection-rule checks
+- trapping edge cases
+- comparison with the unbounded walk in a wide interval
+- basic long-time bounded behaviour checks
+
+Run it from the repository root with:
+
+```bash
+python -m unittest discover -s tests -p "test_reflecting_cont_time_random_walk.py"
+```
+
+----
+
 ## Overview
 
 The **_aleatory_** (/ˈeɪliətəri/) Python library provides functionality for simulating and visualising
