@@ -76,7 +76,7 @@ class ReflectingContinuousTimeRandomWalk(BaseProcess):
         self._validate_boundaries()
 
         self.name = (
-            rf"Continuous--Time Random Walk "
+            rf"Reflecting Continuous--Time Random Walk "
             rf"$(\lambda={self.rate_up},\ \mu={self.rate_down},\ x_0={self.initial})$"
             "\n"
             f"{self._boundary_description()}"
