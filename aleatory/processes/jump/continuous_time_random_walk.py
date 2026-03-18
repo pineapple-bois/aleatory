@@ -10,6 +10,7 @@ from aleatory.utils.utils import check_positive_number, check_positive_integer
 
 class ContinuousTimeRandomWalk(BaseProcess):
     r"""
+
     Continuous-Time Random Walk
     ===========================
 
@@ -21,20 +22,20 @@ class ContinuousTimeRandomWalk(BaseProcess):
 
     In this implementation, the process :math:`\{X_t : t \geq 0\}` jumps:
 
-    - from :math:`k` to :math:`k+1` with rate :math:`\lambda_+`
-    - from :math:`k` to :math:`k-1` with rate :math:`\lambda_-`
+    - from :math:`k` to :math:`k+1` with rate :math:`\lambda`
+    - from :math:`k` to :math:`k-1` with rate :math:`\mu`
 
     Thus the holding times are exponentially distributed with parameter
-    :math:`\lambda_+ + \lambda_-`, and at each jump the direction is chosen with probabilities
+    :math:`\lambda + \mu`, and at each jump the direction is chosen with probabilities
 
     .. math::
 
-       \mathbb{P}(\Delta X = +1) = \frac{\lambda_+}{\lambda_+ + \lambda_-},
+       \mathbb{P}(\Delta X = +1) = \frac{\lambda}{\lambda + \mu},
        \qquad
-       \mathbb{P}(\Delta X = -1) = \frac{\lambda_-}{\lambda_+ + \lambda_-}
+       \mathbb{P}(\Delta X = -1) = \frac{\mu}{\lambda + \mu}
 
-    When :math:`\lambda_+ = \lambda_-`, the walk is symmetric. When
-    :math:`\lambda_+ \neq \lambda_-`, the walk is biased and exhibits drift.
+    When :math:`\lambda = \mu`, the walk is symmetric. When
+    :math:`\lambda \neq \mu`, the walk is biased and exhibits drift.
 
     For fixed :math:`t`, the marginal law of :math:`X_t` is the Skellam distribution,
     since the process may be represented as the difference of two independent Poisson
@@ -45,18 +46,20 @@ class ContinuousTimeRandomWalk(BaseProcess):
 
     """
 
-    def __init__(self, rate_up=0.5, rate_down=0.5, rng=None):
+    def __init__(self, rate_up=0.5, rate_down=0.5, initial=0, rng=None):
         r"""
-        :param float rate_up: right-jump rate :math:`\lambda_+ \geq 0`
-        :param float rate_down: left-jump rate :math:`\lambda_- \geq 0`
+        :param float rate_up: right-jump rate :math:`\lambda \geq 0`
+        :param float rate_down: left-jump rate :math:`\mu \geq 0`
+        :param int initial: initial state :math:`x_0 \in \mathbb{Z}`
         :param numpy.random.Generator rng: optional custom random number generator
         """
         super().__init__(rng=rng)
         self.rate_up = rate_up
         self.rate_down = rate_down
+        self.initial = initial
         self.name = (
             rf"Continuous--Time Random Walk "
-            rf"$(\lambda_+={self.rate_up}$,\ $\lambda_-={self.rate_down})$"
+            rf"$(\lambda={self.rate_up},\ \mu={self.rate_down},\ x_0={self.initial})$"
         )
         self.T = None
         self.N = None
@@ -64,14 +67,14 @@ class ContinuousTimeRandomWalk(BaseProcess):
 
     def __str__(self):
         return (
-            f"Continuous-time random walk with "
-            f"rate_up={self.rate_up} and rate_down={self.rate_down}"
+            f"Continuous--time random walk with "
+            f"rate_up={self.rate_up}, rate_down={self.rate_down}, initial={self.initial}"
         )
 
     def __repr__(self):
         return (
             f"ContinuousTimeRandomWalk("
-            f"rate_up={self.rate_up}, rate_down={self.rate_down})"
+            f"rate_up={self.rate_up}, rate_down={self.rate_down}, initial={self.initial})"
         )
 
     @property
@@ -106,13 +109,24 @@ class ContinuousTimeRandomWalk(BaseProcess):
         if self.total_rate <= 0:
             raise ValueError("At least one of rate_up or rate_down must be positive")
 
-    def _sample_continuous_time_random_walk(self, T=None, x0=0):
+    @property
+    def initial(self):
+        return self._initial
+
+    @initial.setter
+    def initial(self, value):
+        if not isinstance(value, (int, np.integer)):
+            raise TypeError("initial must be an integer")
+        self._initial = int(value)
+
+
+    def _sample_continuous_time_random_walk(self, T=None):
         if T is None:
             raise ValueError("T must be provided")
         check_positive_number(T, "Time")
 
         t = 0.0
-        x = int(x0)
+        x = self.initial
 
         times = [0.0]
         states = [x]
@@ -138,8 +152,8 @@ class ContinuousTimeRandomWalk(BaseProcess):
 
         return np.asarray(times), np.asarray(states)
 
-    def sample(self, T=None, x0=0):
-        return self._sample_continuous_time_random_walk(T=T, x0=x0)
+    def sample(self, T=None):
+        return self._sample_continuous_time_random_walk(T=T)
 
     def get_marginal(self, t):
         if not isinstance(t, (int, float, np.integer, np.floating)):
@@ -149,13 +163,13 @@ class ContinuousTimeRandomWalk(BaseProcess):
         # At fixed time t, X_t is integer-valued on Z, so its marginal law is discrete.
         # For constant jump rates, X_t is the difference of two independent Poisson variables,
         # hence Skellam-distributed.
-        return skellam(self.rate_up * t, self.rate_down * t)
+        return skellam(self.rate_up * t, self.rate_down * t, loc=self.initial)
 
     def marginal_expectation(self, times):
         times = np.asarray(times)
         if np.any(times < 0):
             raise ValueError("Times must be nonnegative")
-        return (self.rate_up - self.rate_down) * times
+        return self.initial + (self.rate_up - self.rate_down) * times
 
     def marginal_variance(self, times):
         times = np.asarray(times)
@@ -163,18 +177,17 @@ class ContinuousTimeRandomWalk(BaseProcess):
             raise ValueError("Times must be nonnegative")
         return (self.rate_up + self.rate_down) * times
 
-    def simulate(self, N, T=None, x0=0):
+    def simulate(self, N, T=None):
         check_positive_integer(N, "N")
         self.N = N
         self.T = T
-        self.paths = [self.sample(T=T, x0=x0) for _ in range(N)]
+        self.paths = [self.sample(T=T) for _ in range(N)]
         return self.paths
 
     def plot(
             self,
             N,
             T=None,
-            x0=0,
             style="seaborn-v0_8-whitegrid",
             mode="steps",
             title=None,
@@ -182,7 +195,7 @@ class ContinuousTimeRandomWalk(BaseProcess):
             **fig_kw,
     ):
         chart_suptitle = suptitle if suptitle is not None else self.name
-        self.simulate(N=N, T=T, x0=x0)
+        self.simulate(N=N, T=T)
         paths = self.paths
 
         with plt.style.context(style):
@@ -218,7 +231,6 @@ class ContinuousTimeRandomWalk(BaseProcess):
             self,
             N,
             T=10.0,
-            x0=0,
             style="seaborn-v0_8-whitegrid",
             colormap="viridis",
             envelope=False,
@@ -233,11 +245,11 @@ class ContinuousTimeRandomWalk(BaseProcess):
         check_positive_number(T, "Time")
 
         chart_suptitle = suptitle if suptitle is not None else self.name
-        self.simulate(N=N, T=T, x0=x0)
+        self.simulate(N=N, T=T)
         paths = self.paths
 
         times_grid = np.linspace(0.0, T, 400)
-        expectations = self.marginal_expectation(times_grid) + x0
+        expectations = self.marginal_expectation(times_grid)
         variances = self.marginal_variance(times_grid)
         stds = np.sqrt(variances)
         lower = expectations - 2.0 * stds
