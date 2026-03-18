@@ -18,7 +18,7 @@
 This class implements a nearest-neighbour continuous-time jump process on the full integer lattice $\mathbb{Z}$. The process jumps upward with rate $\lambda$ and downward with rate $\mu$, so it supports both symmetric and biased walks. For constant left and right jump rates, the marginal law at fixed time is given by the Skellam distribution.
 
 <p align="center">
-  <img src="docs/README_figs/CTRW_biased_x0=5.png" width="900" />
+  <img src="docs/README_figs/CTRW_biased_x0=5.png" style="display:block;float:none;margin-left:auto;margin-right:auto;width:80%" />
 </p>
 
 **Signature**
@@ -80,7 +80,7 @@ At least one of `rate_up` or `rate_down` must be positive.
 This class implements a nearest-neighbour continuous-time jump process on an integer state space with one-sided or two-sided reflecting boundaries. In the interior, the process jumps upward with rate $\lambda$ and downward with rate $\mu$. At a reflecting boundary, any jump that would leave the admissible state space is suppressed by setting the outward jump rate to zero.
 
 <p align="center">
-  <img src="docs/README_figs/ReflectingCTRW_biasedup.png" width="900" />
+  <img src="docs/README_figs/ReflectingCTRW_biasedup.png" style="display:block;float:none;margin-left:auto;margin-right:auto;width:80%" />
 </p>
 
 **Signature**
@@ -131,9 +131,65 @@ At least one of `lower` or `upper` must be specified. If both are specified, the
 - at an upper reflecting boundary, the upward jump rate is set to zero
 
 
+### 3. `processes.jump.AbsorbingContinuousTimeRandomWalk`
+
+This class implements a nearest-neighbour continuous-time jump process on an integer state space with one-sided or two-sided absorbing boundaries. In the interior, the process jumps upward with rate $\lambda$ and downward with rate $\mu$. At an absorbing boundary, the process becomes trapped, so once a boundary is hit the state remains fixed for all subsequent times.
+
+<p align="center">
+  <img src="docs/README_figs/ACTRW-slightbias.png" style="display:block;float:none;margin-left:auto;margin-right:auto;width:80%" />
+</p>
+
+**Signature**
+
+```python
+from aleatory.processes import AbsorbingContinuousTimeRandomWalk
+
+AbsorbingContinuousTimeRandomWalk(
+    rate_up=0.5,
+    rate_down=0.5,
+    initial=0,
+    lower=None,
+    upper=None,
+    rng=None,
+)
+```
+
+**Arguments**
+
+- `rate_up`: right-jump rate $\lambda \geq 0$
+- `rate_down`: left-jump rate $\mu \geq 0$
+- `initial`: initial state $x_0 \in \mathbb{Z}$
+- `lower`: optional lower absorbing boundary
+- `upper`: optional upper absorbing boundary
+- `rng`: optional NumPy random number generator
+
+At least one of `lower` or `upper` must be specified. If both are specified, the class requires `lower < upper`, and the initial state must lie inside the admissible state space.
+
+**Implemented core methods**
+
+- `sample(T=...)`  
+  simulate a single path up to time `T`
+
+- `simulate(N=..., T=...)`  
+  simulate `N` independent paths up to time `T`
+
+- `plot(...)`  
+  produce a basic path plot
+
+- `draw(...)`  
+  produce an ensemble figure using empirical summaries from simulated paths, including terminal histograms and empirical mean behaviour
+
+**Implementation notes**
+
+- paths are represented as `(times, states)` pairs
+- absorption is implemented through state-dependent local rates
+- at an absorbing boundary, both local jump rates are set to zero
+- once the process reaches an absorbing boundary, it remains there for all later times
+
+
 ### Tests
 
-1. `ReflectingContinuousTimeRandomWalk`
+#### 1. `ReflectingContinuousTimeRandomWalk`
 
 ```text
 tests/test_reflecting_cont_time_random_walk.py
@@ -153,6 +209,29 @@ Run it from the repository root with:
 
 ```bash
 python -m unittest discover -s tests -p "test_reflecting_cont_time_random_walk.py"
+```
+
+
+#### 2. `AbsorbingContinuousTimeRandomWalk`
+
+```text
+tests/test_absorbing_cont_time_random_walk.py
+```
+
+Covers:
+
+- constructor validation
+- path structure invariants
+- state-space invariants
+- absorption-rule checks
+- trapping behaviour at absorbing boundaries
+- comparison with the unbounded walk in a wide interval
+- basic long-time absorbing behaviour checks
+
+Run it from the repository root with:
+
+```bash
+python -m unittest discover -s tests -p "test_absorbing_cont_time_random_walk.py"
 ```
 
 ----
