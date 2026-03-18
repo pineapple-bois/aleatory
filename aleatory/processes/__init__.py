@@ -55,6 +55,7 @@ from aleatory.processes.fractional.fbm import fBM
 
 from aleatory.processes.jump.continuous_time_random_walk import ContinuousTimeRandomWalk
 from aleatory.processes.jump.continuous_time_random_walk_reflecting import ReflectingContinuousTimeRandomWalk
+from aleatory.processes.jump.continuous_time_random_walk_absorbing import AbsorbingContinuousTimeRandomWalk
 from aleatory.processes.jump.galton_watson import GaltonWatson
 from aleatory.processes.jump.gamma import GammaProcess
 from aleatory.processes.jump.gen_random_walk import GeneralRandomWalk
