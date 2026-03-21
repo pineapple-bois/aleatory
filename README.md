@@ -194,9 +194,22 @@ The planar sample returned by `sample(n)` consists of the coordinate pair `(x, y
 
 ----
 
-### New Tests
+## Backlog
 
-#### 1. `tests/test_reflecting_cont_time_random_walk.py`
+Refactor all processes that hardcode
+- `style="seaborn-v0_8-whitegrid"` 
+- `with plt.style.context(style):`
+- Explore `utils.plotters` for above
+
+Bin `processes.jump` into 'discrete' & 'continuous'
+
+Tidy up all `__init__.py` (every module)
+
+----
+
+## New Tests
+
+### 1. `tests/test_reflecting_cont_time_random_walk.py`
 
 Testing: `ReflectingContinuousTimeRandomWalk`
 
@@ -215,7 +228,7 @@ python -m unittest discover -s tests -p "test_reflecting_cont_time_random_walk.p
 ```
 
 
-#### 2. `tests/test_absorbing_cont_time_random_walk.py`
+### 2. `tests/test_absorbing_cont_time_random_walk.py`
 
 Testing: `AbsorbingContinuousTimeRandomWalk`
 
