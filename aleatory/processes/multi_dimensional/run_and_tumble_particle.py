@@ -8,7 +8,7 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 
 from aleatory.processes.base import StochasticProcess
-from aleatory.utils.plotters_2d import plot_paths_coordinates
+from aleatory.utils.plotters_2d import plot_coordinate_paths
 from aleatory.utils.utils import get_times
 
 
@@ -110,7 +110,12 @@ class RTP2D(StochasticProcess):
         self.x0 = x0
         self.y0 = y0
         self.theta0 = theta0
-        self.name = "Run-and-Tumble Particle 2D"
+
+        self.name = (
+            "Run-and-Tumble Particle "
+            rf"$(v_0={self.speed},\ D_{{\mathrm{{T}}}}={self.translational_diffusion},\ \lambda={self.tumble_rate})$"
+        )
+
         self.n = None
         self.times = None
         self._last_theta = None
@@ -118,10 +123,34 @@ class RTP2D(StochasticProcess):
         self._last_y = None
         self._last_tumble_indices = None
 
+
+    def __str__(self):
+        return (
+            f"Run-and-Tumble Particle with "
+            f"speed={self.speed}, tumble_rate={self.tumble_rate}, "
+            f"translational_diffusion={self.translational_diffusion}"
+        )
+
+
+    def __repr__(self):
+        return (
+            f"RTP2D("
+            f"speed={self.speed}, "
+            f"tumble_rate={self.tumble_rate}, "
+            f"translational_diffusion={self.translational_diffusion}, "
+            f"T={self.T}, "
+            f"x0={self.x0}, "
+            f"y0={self.y0}, "
+            f"theta0={self.theta0}"
+            f")"
+        )
+
+
     @property
     def last_theta(self):
         """Most recently simulated orientation path."""
         return self._last_theta
+
 
     @property
     def last_position(self):
@@ -130,12 +159,17 @@ class RTP2D(StochasticProcess):
             return None
         return self._last_x, self._last_y
 
+
     @property
     def last_tumble_indices(self):
         """Indices at which tumbles occurred in the most recent simulation."""
         return self._last_tumble_indices
 
+
     def _sample(self, n):
+        if n < 2:
+            raise ValueError("n must be at least 2")
+
         dt = self.T / (n - 1)
 
         tumble_probability = self.tumble_rate * dt
@@ -186,16 +220,19 @@ class RTP2D(StochasticProcess):
         self._last_tumble_indices = np.array(tumble_indices, dtype=int)
         return x, y
 
+
     def sample(self, n):
         self.n = n
         self.times = get_times(self.T, n)
         return self._sample(n)
+
 
     def sample_with_orientation(self, n):
         self.n = n
         self.times = get_times(self.T, n)
         x, y = self._sample(n)
         return x, y, self._last_theta.copy()
+
 
     def simulate(self, n, N):
         self.n = n
@@ -206,6 +243,7 @@ class RTP2D(StochasticProcess):
             simulations.append((x, y))
         return simulations
 
+
     def simulate_with_orientation(self, n, N):
         self.n = n
         self.times = get_times(self.T, n)
@@ -215,47 +253,52 @@ class RTP2D(StochasticProcess):
             simulations.append((x, y, self._last_theta.copy()))
         return simulations
 
+
     def plot_sample(
-        self,
-        n,
-        coordinates=False,
-        title=None,
-        suptitle=None,
-        style="seaborn-v0_8-whitegrid",
-        mode="linear",
-        **fig_kw,
+            self,
+            n,
+            coordinates=False,
+            title=None,
+            suptitle=None,
+            style="seaborn-v0_8-whitegrid",
+            mode="linear",
+            ax=None,
+            **fig_kw,
     ):
         if coordinates:
-            fig = self.plot_sample_coordinates(
+            return self.plot_sample_coordinates(
                 n=n,
                 title=title,
                 suptitle=suptitle,
                 style=style,
                 mode=mode,
+                ax=ax,
                 **fig_kw,
             )
-        else:
-            fig = self.plot_sample_2d(
-                n=n,
-                title=title,
-                suptitle=suptitle,
-                style=style,
-                **fig_kw,
-            )
-        return fig
+        return self.plot_sample_2d(
+            n=n,
+            title=title,
+            suptitle=suptitle,
+            style=style,
+            ax=ax,
+            **fig_kw,
+        )
+
 
     def plot_sample_coordinates(
-        self,
-        n,
-        title=None,
-        suptitle=None,
-        style="seaborn-v0_8-whitegrid",
-        mode="linear",
-        **fig_kw,
+            self,
+            n,
+            title=None,
+            suptitle=None,
+            style="seaborn-v0_8-whitegrid",
+            mode="linear",
+            ax=None,
+            **fig_kw,
     ):
         chart_suptitle = suptitle if suptitle is not None else self.name
         x, y, _ = self.sample_with_orientation(n)
-        fig = plot_paths_coordinates(
+
+        ax = plot_coordinate_paths(
             times=self.times,
             paths1=[x],
             paths2=[y],
@@ -263,19 +306,79 @@ class RTP2D(StochasticProcess):
             title=title,
             suptitle=chart_suptitle,
             mode=mode,
+            ax=ax,
             **fig_kw,
         )
-        return fig
+        return ax
+
+
+    def plot_orientation_and_tumbles(
+            self,
+            n,
+            style="seaborn-v0_8-whitegrid",
+            theta_title="RTP orientation path",
+            tumble_title="Tumble event times",
+            ax_theta=None,
+            ax_tumbles=None,
+            **fig_kw,
+    ):
+        _, _, theta = self.sample_with_orientation(n)
+
+        with plt.style.context(style):
+            created_axes = False
+
+            if ax_theta is None or ax_tumbles is None:
+                fig, (ax_theta, ax_tumbles) = plt.subplots(
+                    2,
+                    1,
+                    sharex=True,
+                    gridspec_kw={"height_ratios": [3, 1]},
+                    **fig_kw,
+                )
+                created_axes = True
+            else:
+                fig = ax_theta.figure
+
+            ax_theta.plot(self.times, theta, lw=1.2)
+            ax_theta.set_ylabel(r"$\theta(t)$")
+            ax_theta.set_title(theta_title)
+            ax_theta.grid(True)
+
+            tumble_indices = self.last_tumble_indices
+            if tumble_indices is not None and len(tumble_indices) > 0:
+                tumble_times = self.times[tumble_indices]
+                ax_tumbles.plot(
+                    tumble_times,
+                    np.full_like(tumble_times, 0.5, dtype=float),
+                    linestyle="None",
+                    marker="|",
+                    markersize=18,
+                    markeredgewidth=1.5,
+                )
+
+            ax_tumbles.set_xlabel("$t$")
+            ax_tumbles.set_yticks([])
+            ax_tumbles.set_ylim(0.0, 1.0)
+            ax_tumbles.set_title(tumble_title)
+            ax_tumbles.grid(True)
+
+            if created_axes:
+                fig.tight_layout()
+
+        return ax_theta, ax_tumbles
+
 
     def plot_sample_2d(
-        self,
-        n,
-        title=None,
-        suptitle=None,
-        color_by="time",
-        style="seaborn-v0_8-whitegrid",
-        color_map="summer",
-        **fig_kw,
+            self,
+            n,
+            title=None,
+            suptitle=None,
+            color_by="time",
+            style="seaborn-v0_8-whitegrid",
+            color_map="summer",
+            ax=None,
+            show_colorbar=True,
+            **fig_kw,
     ):
         cmap = plt.get_cmap(color_map)
         chart_suptitle = suptitle if suptitle is not None else self.name
@@ -295,25 +398,35 @@ class RTP2D(StochasticProcess):
             raise ValueError("color_by must be either 'time' or 'distance'")
 
         with plt.style.context(style):
-            fig, ax = plt.subplots(**fig_kw)
+            created_fig = False
+
+            if ax is None:
+                fig, ax = plt.subplots(**fig_kw)
+                created_fig = True
+            else:
+                fig = ax.figure
+
             ax.scatter(x[0], y[0], color="green", label="Start", zorder=5)
             ax.scatter(x[-1], y[-1], color="maroon", label="End", zorder=5)
 
             for i in range(len(x) - 1):
-                ax.plot(x[i : i + 2], y[i : i + 2], color=colors_indices[i], lw=1.5)
+                ax.plot(x[i:i + 2], y[i:i + 2], color=colors_indices[i], lw=1.5)
 
-            fig.colorbar(
-                ScalarMappable(norm=norm, cmap=cmap),
-                label=label_title,
-                ax=ax,
-            )
-            fig.suptitle(chart_suptitle)
+            if show_colorbar:
+                fig.colorbar(
+                    ScalarMappable(norm=norm, cmap=cmap),
+                    label=label_title,
+                    ax=ax,
+                )
+
+            if created_fig and suptitle is not False:
+                fig.suptitle(chart_suptitle)
+
             ax.set_title(title)
             ax.set_xlabel("$X_1(t)$")
             ax.set_ylabel("$X_2(t)$")
             ax.legend()
             ax.grid(True)
             ax.axis("equal")
-            plt.show()
 
-        return fig
+        return ax

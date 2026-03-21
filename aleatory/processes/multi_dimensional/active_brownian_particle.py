@@ -9,7 +9,7 @@ from matplotlib.cm import ScalarMappable
 
 from aleatory.processes.base import StochasticProcess
 from aleatory.utils.utils import get_times
-from aleatory.utils.plotters_2d import plot_paths_coordinates
+from aleatory.utils.plotters_2d import plot_coordinate_paths
 
 
 class ABP2D(StochasticProcess):
@@ -87,23 +87,57 @@ class ABP2D(StochasticProcess):
         rng=None,
     ):
         super().__init__(T=T, rng=rng)
+
+        if speed < 0.0:
+            raise ValueError("speed must be non-negative")
+        if rotational_diffusion < 0.0:
+            raise ValueError("rotational_diffusion must be non-negative")
+        if translational_diffusion < 0.0:
+            raise ValueError("translational_diffusion must be non-negative")
+
         self.speed = speed
         self.rotational_diffusion = rotational_diffusion
         self.translational_diffusion = translational_diffusion
         self.x0 = x0
         self.y0 = y0
         self.theta0 = theta0
-        self.name = "Active Brownian Particle 2D"
+        self.name = (
+            "Active Brownian Particle "
+            rf"$(v_0={self.speed},\ D_{{\mathrm{{T}}}}={self.translational_diffusion},\ D_{{\mathrm{{R}}}}={self.rotational_diffusion})$"
+        )
         self.n = None
         self.times = None
         self._last_theta = None
         self._last_x = None
         self._last_y = None
 
+
+    def __str__(self):
+        return (
+            f"Active Brownian Particle with "
+            f"speed={self.speed}, rotational_diffusion={self.rotational_diffusion}, translational_diffusion={self.translational_diffusion}"
+        )
+
+
+    def __repr__(self):
+        return (
+            f"ABP2D("
+            f"speed={self.speed}, "
+            f"rotational_diffusion={self.rotational_diffusion}, "
+            f"translational_diffusion={self.translational_diffusion}, "
+            f"T={self.T}, "
+            f"x0={self.x0}, "
+            f"y0={self.y0}, "
+            f"theta0={self.theta0}"
+            f")"
+        )
+
+
     @property
     def last_theta(self):
         """Most recently simulated orientation path."""
         return self._last_theta
+
 
     @property
     def last_position(self):
@@ -112,7 +146,11 @@ class ABP2D(StochasticProcess):
             return None
         return self._last_x, self._last_y
 
+
     def _sample(self, n):
+        if n < 2:
+            raise ValueError("dimension n must be at least 2")
+
         dt = self.T / (n - 1)
 
         theta_noise = self.rng.normal(
@@ -155,16 +193,19 @@ class ABP2D(StochasticProcess):
         self._last_y = y
         return x, y
 
+
     def sample(self, n):
         self.n = n
         self.times = get_times(self.T, n)
         return self._sample(n)
+
 
     def sample_with_orientation(self, n):
         self.n = n
         self.times = get_times(self.T, n)
         x, y = self._sample(n)
         return x, y, self._last_theta.copy()
+
 
     def simulate(self, n, N):
         self.n = n
@@ -175,6 +216,7 @@ class ABP2D(StochasticProcess):
             simulations.append((x, y))
         return simulations
 
+
     def simulate_with_orientation(self, n, N):
         self.n = n
         self.times = get_times(self.T, n)
@@ -184,47 +226,52 @@ class ABP2D(StochasticProcess):
             simulations.append((x, y, self._last_theta.copy()))
         return simulations
 
+
     def plot_sample(
-        self,
-        n,
-        coordinates=False,
-        title=None,
-        suptitle=None,
-        style="seaborn-v0_8-whitegrid",
-        mode="linear",
-        **fig_kw,
+            self,
+            n,
+            coordinates=False,
+            title=None,
+            suptitle=None,
+            style="seaborn-v0_8-whitegrid",
+            mode="linear",
+            ax=None,
+            **fig_kw,
     ):
         if coordinates:
-            fig = self.plot_sample_coordinates(
+            return self.plot_sample_coordinates(
                 n=n,
                 title=title,
                 suptitle=suptitle,
                 style=style,
                 mode=mode,
+                ax=ax,
                 **fig_kw,
             )
-        else:
-            fig = self.plot_sample_2d(
-                n=n,
-                title=title,
-                suptitle=suptitle,
-                style=style,
-                **fig_kw,
-            )
-        return fig
+        return self.plot_sample_2d(
+            n=n,
+            title=title,
+            suptitle=suptitle,
+            style=style,
+            ax=ax,
+            **fig_kw
+        )
+
 
     def plot_sample_coordinates(
-        self,
-        n,
-        title=None,
-        suptitle=None,
-        style="seaborn-v0_8-whitegrid",
-        mode="linear",
-        **fig_kw,
+            self,
+            n,
+            title=None,
+            suptitle=None,
+            style="seaborn-v0_8-whitegrid",
+            mode="linear",
+            ax=None,
+            **fig_kw,
     ):
         chart_suptitle = suptitle if suptitle is not None else self.name
         x, y, _ = self.sample_with_orientation(n)
-        fig = plot_paths_coordinates(
+
+        ax = plot_coordinate_paths(
             times=self.times,
             paths1=[x],
             paths2=[y],
@@ -232,19 +279,23 @@ class ABP2D(StochasticProcess):
             title=title,
             suptitle=chart_suptitle,
             mode=mode,
+            ax=ax,
             **fig_kw,
         )
-        return fig
+        return ax
+
 
     def plot_sample_2d(
-        self,
-        n,
-        title=None,
-        suptitle=None,
-        color_by="time",
-        style="seaborn-v0_8-whitegrid",
-        color_map="summer",
-        **fig_kw,
+            self,
+            n,
+            title=None,
+            suptitle=None,
+            color_by="time",
+            style="seaborn-v0_8-whitegrid",
+            color_map="summer",
+            ax=None,
+            show_colorbar=True,
+            **fig_kw,
     ):
         cmap = plt.get_cmap(color_map)
         chart_suptitle = suptitle if suptitle is not None else self.name
@@ -264,25 +315,35 @@ class ABP2D(StochasticProcess):
             raise ValueError("color_by must be either 'time' or 'distance'")
 
         with plt.style.context(style):
-            fig, ax = plt.subplots(**fig_kw)
+            created_fig = False
+
+            if ax is None:
+                fig, ax = plt.subplots(**fig_kw)
+                created_fig = True
+            else:
+                fig = ax.figure
+
             ax.scatter(x[0], y[0], color="green", label="Start", zorder=5)
             ax.scatter(x[-1], y[-1], color="maroon", label="End", zorder=5)
 
             for i in range(len(x) - 1):
-                ax.plot(x[i : i + 2], y[i : i + 2], color=colors_indices[i], lw=1.5)
+                ax.plot(x[i:i + 2], y[i:i + 2], color=colors_indices[i], lw=1.5)
 
-            fig.colorbar(
-                ScalarMappable(norm=norm, cmap=cmap),
-                label=label_title,
-                ax=ax,
-            )
-            fig.suptitle(chart_suptitle)
+            if show_colorbar:
+                fig.colorbar(
+                    ScalarMappable(norm=norm, cmap=cmap),
+                    label=label_title,
+                    ax=ax,
+                )
+
+            if created_fig and suptitle is not False:
+                fig.suptitle(chart_suptitle)
+
             ax.set_title(title)
             ax.set_xlabel("$X_1(t)$")
             ax.set_ylabel("$X_2(t)$")
             ax.legend()
             ax.grid(True)
             ax.axis("equal")
-            plt.show()
 
-        return fig
+        return ax
