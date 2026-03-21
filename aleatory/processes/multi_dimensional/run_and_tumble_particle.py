@@ -260,7 +260,6 @@ class RTP2D(StochasticProcess):
             coordinates=False,
             title=None,
             suptitle=None,
-            style="seaborn-v0_8-whitegrid",
             mode="linear",
             ax=None,
             **fig_kw,
@@ -270,7 +269,6 @@ class RTP2D(StochasticProcess):
                 n=n,
                 title=title,
                 suptitle=suptitle,
-                style=style,
                 mode=mode,
                 ax=ax,
                 **fig_kw,
@@ -279,7 +277,6 @@ class RTP2D(StochasticProcess):
             n=n,
             title=title,
             suptitle=suptitle,
-            style=style,
             ax=ax,
             **fig_kw,
         )
@@ -290,7 +287,6 @@ class RTP2D(StochasticProcess):
             n,
             title=None,
             suptitle=None,
-            style="seaborn-v0_8-whitegrid",
             mode="linear",
             ax=None,
             **fig_kw,
@@ -302,7 +298,6 @@ class RTP2D(StochasticProcess):
             times=self.times,
             paths1=[x],
             paths2=[y],
-            style=style,
             title=title,
             suptitle=chart_suptitle,
             mode=mode,
@@ -315,7 +310,6 @@ class RTP2D(StochasticProcess):
     def plot_orientation_and_tumbles(
             self,
             n,
-            style="seaborn-v0_8-whitegrid",
             theta_title="RTP orientation path",
             tumble_title="Tumble event times",
             ax_theta=None,
@@ -324,46 +318,45 @@ class RTP2D(StochasticProcess):
     ):
         _, _, theta = self.sample_with_orientation(n)
 
-        with plt.style.context(style):
-            created_axes = False
+        created_axes = False
 
-            if ax_theta is None or ax_tumbles is None:
-                fig, (ax_theta, ax_tumbles) = plt.subplots(
-                    2,
-                    1,
-                    sharex=True,
-                    gridspec_kw={"height_ratios": [3, 1]},
-                    **fig_kw,
-                )
-                created_axes = True
-            else:
-                fig = ax_theta.figure
+        if ax_theta is None or ax_tumbles is None:
+            fig, (ax_theta, ax_tumbles) = plt.subplots(
+                2,
+                1,
+                sharex=True,
+                gridspec_kw={"height_ratios": [3, 1]},
+                **fig_kw,
+            )
+            created_axes = True
+        else:
+            fig = ax_theta.figure
 
-            ax_theta.plot(self.times, theta, lw=1.2)
-            ax_theta.set_ylabel(r"$\theta(t)$")
-            ax_theta.set_title(theta_title)
-            ax_theta.grid(True)
+        ax_theta.plot(self.times, theta, lw=1.2)
+        ax_theta.set_ylabel(r"$\theta(t)$")
+        ax_theta.set_title(theta_title)
+        ax_theta.grid(True)
 
-            tumble_indices = self.last_tumble_indices
-            if tumble_indices is not None and len(tumble_indices) > 0:
-                tumble_times = self.times[tumble_indices]
-                ax_tumbles.plot(
-                    tumble_times,
-                    np.full_like(tumble_times, 0.5, dtype=float),
-                    linestyle="None",
-                    marker="|",
-                    markersize=18,
-                    markeredgewidth=1.5,
-                )
+        tumble_indices = self.last_tumble_indices
+        if tumble_indices is not None and len(tumble_indices) > 0:
+            tumble_times = self.times[tumble_indices]
+            ax_tumbles.plot(
+                tumble_times,
+                np.full_like(tumble_times, 0.5, dtype=float),
+                linestyle="None",
+                marker="|",
+                markersize=18,
+                markeredgewidth=1.5,
+            )
 
-            ax_tumbles.set_xlabel("$t$")
-            ax_tumbles.set_yticks([])
-            ax_tumbles.set_ylim(0.0, 1.0)
-            ax_tumbles.set_title(tumble_title)
-            ax_tumbles.grid(True)
+        ax_tumbles.set_xlabel("$t$")
+        ax_tumbles.set_yticks([])
+        ax_tumbles.set_ylim(0.0, 1.0)
+        ax_tumbles.set_title(tumble_title)
+        ax_tumbles.grid(True)
 
-            if created_axes:
-                fig.tight_layout()
+        if created_axes:
+            fig.tight_layout()
 
         return ax_theta, ax_tumbles
 
@@ -374,13 +367,11 @@ class RTP2D(StochasticProcess):
             title=None,
             suptitle=None,
             color_by="time",
-            style="seaborn-v0_8-whitegrid",
-            color_map="summer",
             ax=None,
             show_colorbar=True,
             **fig_kw,
     ):
-        cmap = plt.get_cmap(color_map)
+        cmap = plt.get_cmap()
         chart_suptitle = suptitle if suptitle is not None else self.name
         x, y, _ = self.sample_with_orientation(n)
 
@@ -397,36 +388,54 @@ class RTP2D(StochasticProcess):
         else:
             raise ValueError("color_by must be either 'time' or 'distance'")
 
-        with plt.style.context(style):
-            created_fig = False
+        created_fig = False
 
-            if ax is None:
-                fig, ax = plt.subplots(**fig_kw)
-                created_fig = True
-            else:
-                fig = ax.figure
+        if ax is None:
+            fig, ax = plt.subplots(**fig_kw)
+            created_fig = True
+        else:
+            fig = ax.figure
 
-            ax.scatter(x[0], y[0], color="green", label="Start", zorder=5)
-            ax.scatter(x[-1], y[-1], color="maroon", label="End", zorder=5)
+        start_color = colors_indices[0]
+        end_color = colors_indices[-1]
+        marker_edgecolor = plt.rcParams["axes.edgecolor"]
 
-            for i in range(len(x) - 1):
-                ax.plot(x[i:i + 2], y[i:i + 2], color=colors_indices[i], lw=1.5)
+        ax.scatter(
+            x[0], y[0],
+            color=start_color,
+            edgecolor=marker_edgecolor,
+            linewidth=0.6,
+            label="Start",
+            zorder=5,
+        )
 
-            if show_colorbar:
-                fig.colorbar(
-                    ScalarMappable(norm=norm, cmap=cmap),
-                    label=label_title,
-                    ax=ax,
-                )
+        ax.scatter(
+            x[-1], y[-1],
+            color=end_color,
+            edgecolor=marker_edgecolor,
+            linewidth=0.6,
+            label="End",
+            zorder=5,
+        )
 
-            if created_fig and suptitle is not False:
-                fig.suptitle(chart_suptitle)
+        for i in range(len(x) - 1):
+            ax.plot(x[i:i + 2], y[i:i + 2], color=colors_indices[i], lw=1.2)
 
-            ax.set_title(title)
-            ax.set_xlabel("$X_1(t)$")
-            ax.set_ylabel("$X_2(t)$")
-            ax.legend()
-            ax.grid(True)
-            ax.axis("equal")
+        if show_colorbar:
+            fig.colorbar(
+                ScalarMappable(norm=norm, cmap=cmap),
+                label=label_title,
+                ax=ax,
+            )
+
+        if created_fig and suptitle is not False:
+            fig.suptitle(chart_suptitle)
+
+        ax.set_title(title)
+        ax.set_xlabel("$X_1(t)$")
+        ax.set_ylabel("$X_2(t)$")
+        ax.legend()
+        ax.grid(True)
+        ax.axis("equal")
 
         return ax

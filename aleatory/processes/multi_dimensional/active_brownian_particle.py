@@ -233,7 +233,6 @@ class ABP2D(StochasticProcess):
             coordinates=False,
             title=None,
             suptitle=None,
-            style="seaborn-v0_8-whitegrid",
             mode="linear",
             ax=None,
             **fig_kw,
@@ -243,7 +242,6 @@ class ABP2D(StochasticProcess):
                 n=n,
                 title=title,
                 suptitle=suptitle,
-                style=style,
                 mode=mode,
                 ax=ax,
                 **fig_kw,
@@ -252,7 +250,6 @@ class ABP2D(StochasticProcess):
             n=n,
             title=title,
             suptitle=suptitle,
-            style=style,
             ax=ax,
             **fig_kw
         )
@@ -263,7 +260,6 @@ class ABP2D(StochasticProcess):
             n,
             title=None,
             suptitle=None,
-            style="seaborn-v0_8-whitegrid",
             mode="linear",
             ax=None,
             **fig_kw,
@@ -275,7 +271,6 @@ class ABP2D(StochasticProcess):
             times=self.times,
             paths1=[x],
             paths2=[y],
-            style=style,
             title=title,
             suptitle=chart_suptitle,
             mode=mode,
@@ -291,13 +286,11 @@ class ABP2D(StochasticProcess):
             title=None,
             suptitle=None,
             color_by="time",
-            style="seaborn-v0_8-whitegrid",
-            color_map="summer",
             ax=None,
             show_colorbar=True,
             **fig_kw,
     ):
-        cmap = plt.get_cmap(color_map)
+        cmap = plt.get_cmap()
         chart_suptitle = suptitle if suptitle is not None else self.name
         x, y, _ = self.sample_with_orientation(n)
 
@@ -314,36 +307,54 @@ class ABP2D(StochasticProcess):
         else:
             raise ValueError("color_by must be either 'time' or 'distance'")
 
-        with plt.style.context(style):
-            created_fig = False
+        created_fig = False
 
-            if ax is None:
-                fig, ax = plt.subplots(**fig_kw)
-                created_fig = True
-            else:
-                fig = ax.figure
+        if ax is None:
+            fig, ax = plt.subplots(**fig_kw)
+            created_fig = True
+        else:
+            fig = ax.figure
 
-            ax.scatter(x[0], y[0], color="green", label="Start", zorder=5)
-            ax.scatter(x[-1], y[-1], color="maroon", label="End", zorder=5)
+        start_color = colors_indices[0]
+        end_color = colors_indices[-1]
+        marker_edgecolor = plt.rcParams["axes.edgecolor"]
 
-            for i in range(len(x) - 1):
-                ax.plot(x[i:i + 2], y[i:i + 2], color=colors_indices[i], lw=1.5)
+        ax.scatter(
+            x[0], y[0],
+            color=start_color,
+            edgecolor=marker_edgecolor,
+            linewidth=0.6,
+            label="Start",
+            zorder=5,
+        )
 
-            if show_colorbar:
-                fig.colorbar(
-                    ScalarMappable(norm=norm, cmap=cmap),
-                    label=label_title,
-                    ax=ax,
-                )
+        ax.scatter(
+            x[-1], y[-1],
+            color=end_color,
+            edgecolor=marker_edgecolor,
+            linewidth=0.6,
+            label="End",
+            zorder=5,
+        )
 
-            if created_fig and suptitle is not False:
-                fig.suptitle(chart_suptitle)
+        for i in range(len(x) - 1):
+            ax.plot(x[i:i + 2], y[i:i + 2], color=colors_indices[i], lw=1.5)
 
-            ax.set_title(title)
-            ax.set_xlabel("$X_1(t)$")
-            ax.set_ylabel("$X_2(t)$")
-            ax.legend()
-            ax.grid(True)
-            ax.axis("equal")
+        if show_colorbar:
+            fig.colorbar(
+                ScalarMappable(norm=norm, cmap=cmap),
+                label=label_title,
+                ax=ax,
+            )
+
+        if created_fig and suptitle is not False:
+            fig.suptitle(chart_suptitle)
+
+        ax.set_title(title)
+        ax.set_xlabel("$X_1(t)$")
+        ax.set_ylabel("$X_2(t)$")
+        ax.legend()
+        ax.grid(True)
+        ax.axis("equal")
 
         return ax
