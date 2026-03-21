@@ -1,6 +1,8 @@
 from matplotlib import pyplot as plt
 
 
+# TODO: refactor `plot_paths_coordinates'to return axes for downstream
+#  or deprecate and remove
 def plot_paths_coordinates(
     *args,
     times,
@@ -40,6 +42,63 @@ def plot_paths_coordinates(
         ax.legend(loc="best")
         plt.show()
     return fig
+
+
+def plot_coordinate_paths(
+    *args,
+    times,
+    paths1,
+    paths2,
+    style="seaborn-v0_8-whitegrid",
+    title=None,
+    suptitle=None,
+    mode="steps",
+    ax=None,
+    **fig_kw,
+):
+    with plt.style.context(style):
+        created_fig = False
+
+        if ax is None:
+            fig, ax = plt.subplots(**fig_kw)
+            created_fig = True
+        else:
+            fig = ax.figure
+
+        for i, (p1, p2) in enumerate(zip(paths1, paths2)):
+            label1 = "$X_1$" if i == 0 else None
+            label2 = "$X_2$" if i == 0 else None
+
+            if mode == "points":
+                ax.scatter(times, p1, s=7, label=label1)
+                ax.scatter(times, p2, s=7, label=label2)
+            elif mode == "steps":
+                ax.step(times, p1, where="post", label=label1)
+                ax.step(times, p2, where="post", label=label2)
+            elif mode == "linear":
+                ax.plot(times, p1, *args, label=label1)
+                ax.plot(times, p2, *args, label=label2)
+            elif mode in ["points+steps", "steps+points"]:
+                ax.step(times, p1, where="post", label=label1)
+                ax.step(times, p2, where="post", label=label2)
+                color1 = ax.lines[-2].get_color()
+                color2 = ax.lines[-1].get_color()
+                ax.plot(times, p1, "o", color=color1)
+                ax.plot(times, p2, "o", color=color2)
+            else:
+                raise ValueError(
+                    "mode must be 'points', 'steps', 'linear', or 'points+steps'"
+                )
+
+        if created_fig and suptitle is not None:
+            fig.suptitle(suptitle)
+
+        ax.set_title(title)
+        ax.set_xlabel("$t$")
+        ax.set_ylabel("Coordinate processes")
+        ax.legend(loc="best")
+
+    return ax
 
 
 def plot_sample_2d(
