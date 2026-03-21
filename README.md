@@ -10,16 +10,13 @@
 
 -----
 
-## Implemented in this fork
+# Implemented in this fork
 
+## 1. `processes.jump`
 
-### 1. `processes.jump.ContinuousTimeRandomWalk`
+### A. `ContinuousTimeRandomWalk`
 
-This class implements a nearest-neighbour continuous-time jump process on the full integer lattice $\mathbb{Z}$. The process jumps upward with rate $\lambda$ and downward with rate $\mu$, so it supports both symmetric and biased walks. For constant left and right jump rates, the marginal law at fixed time is given by the Skellam distribution.
-
-<p align="center">
-  <img src="docs/README_figs/CTRW_biased_x0=5.png" style="display:block;float:none;margin-left:auto;margin-right:auto;width:80%" />
-</p>
+Implements a nearest-neighbour continuous-time jump process on the full integer lattice $\mathbb{Z}$. The process jumps upward with rate $\lambda$ and downward with rate $\mu$, so it supports both symmetric and biased walks. For constant left and right jump rates, the marginal law at fixed time is given by the Skellam distribution.
 
 **Signature**
 
@@ -43,45 +40,10 @@ ContinuousTimeRandomWalk(
 
 At least one of `rate_up` or `rate_down` must be positive.
 
-**Implemented core methods**
 
-- `sample(T=...)`  
-  simulate a single path up to time `T`
+### B. `ReflectingContinuousTimeRandomWalk`
 
-- `simulate(N=..., T=...)`  
-  simulate `N` independent paths up to time `T`
-
-- `get_marginal(t)`  
-  return the exact marginal law at time `t` as a SciPy Skellam random variable
-
-- `marginal_expectation(times)`  
-  return the exact mean function
-
-- `marginal_variance(times)`  
-  return the exact variance function
-
-- `plot(...)`  
-  produce a basic path plot
-
-- `draw(...)`  
-  produce an ensemble figure with simulated paths, terminal histogram, exact marginal overlay, and mean behaviour
-
-**Implementation notes**
-
-- paths are represented as `(times, states)` pairs
-- the waiting time between jumps is exponential with parameter $\lambda + \mu$
-- at each jump, the process moves by exactly $+1$ or $-1$
-- for constant rates, the process can be represented as the difference of two independent Poisson processes
-- the fixed-time marginal law is implemented via `scipy.stats.skellam`
-
-
-### 2. `processes.jump.ReflectingContinuousTimeRandomWalk`
-
-This class implements a nearest-neighbour continuous-time jump process on an integer state space with one-sided or two-sided reflecting boundaries. In the interior, the process jumps upward with rate $\lambda$ and downward with rate $\mu$. At a reflecting boundary, any jump that would leave the admissible state space is suppressed by setting the outward jump rate to zero.
-
-<p align="center">
-  <img src="docs/README_figs/ReflectingCTRW_biasedup.png" style="display:block;float:none;margin-left:auto;margin-right:auto;width:80%" />
-</p>
+Implements a nearest-neighbour continuous-time jump process on an integer state space with one-sided or two-sided reflecting boundaries. In the interior, the process jumps upward with rate $\lambda$ and downward with rate $\mu$. At a reflecting boundary, any jump that would leave the admissible state space is suppressed by setting the outward jump rate to zero.
 
 **Signature**
 
@@ -109,35 +71,10 @@ ReflectingContinuousTimeRandomWalk(
 
 At least one of `lower` or `upper` must be specified. If both are specified, the class requires `lower < upper`, and the initial state must lie inside the admissible state space.
 
-**Implemented core methods**
 
-- `sample(T=...)`  
-  simulate a single path up to time `T`
+### C. `AbsorbingContinuousTimeRandomWalk`
 
-- `simulate(N=..., T=...)`  
-  simulate `N` independent paths up to time `T`
-
-- `plot(...)`  
-  produce a basic path plot
-
-- `draw(...)`  
-  produce an ensemble figure using empirical summaries from simulated paths, including terminal histograms and empirical mean behaviour
-
-**Implementation notes**
-
-- paths are represented as `(times, states)` pairs
-- reflection is implemented through state-dependent local rates
-- at a lower reflecting boundary, the downward jump rate is set to zero
-- at an upper reflecting boundary, the upward jump rate is set to zero
-
-
-### 3. `processes.jump.AbsorbingContinuousTimeRandomWalk`
-
-This class implements a nearest-neighbour continuous-time jump process on an integer state space with one-sided or two-sided absorbing boundaries. In the interior, the process jumps upward with rate $\lambda$ and downward with rate $\mu$. At an absorbing boundary, the process becomes trapped, so once a boundary is hit the state remains fixed for all subsequent times.
-
-<p align="center">
-  <img src="docs/README_figs/ACTRW-slightbias.png" style="display:block;float:none;margin-left:auto;margin-right:auto;width:80%" />
-</p>
+Implements a nearest-neighbour continuous-time jump process on an integer state space with one-sided or two-sided absorbing boundaries. In the interior, the process jumps upward with rate $\lambda$ and downward with rate $\mu$. At an absorbing boundary, the process becomes trapped, so once a boundary is hit the state remains fixed for all subsequent times.
 
 **Signature**
 
@@ -165,37 +102,103 @@ AbsorbingContinuousTimeRandomWalk(
 
 At least one of `lower` or `upper` must be specified. If both are specified, the class requires `lower < upper`, and the initial state must lie inside the admissible state space.
 
-**Implemented core methods**
 
-- `sample(T=...)`  
-  simulate a single path up to time `T`
+## 2. `processes.multi_dimensional`
 
-- `simulate(N=..., T=...)`  
-  simulate `N` independent paths up to time `T`
+### A. `ABP2D`
 
-- `plot(...)`  
-  produce a basic path plot
+Implements a two-dimensional active Brownian particle with self-propulsion, rotational diffusion, and optional translational diffusion. The particle moves at constant speed `v0` in the direction of its current heading `theta_t`, while the heading itself evolves diffusively. This produces persistent motion over short times and progressive loss of directional memory over longer times.
 
-- `draw(...)`  
-  produce an ensemble figure using empirical summaries from simulated paths, including terminal histograms and empirical mean behaviour
+The process is simulated from the Langevin system
 
-**Implementation notes**
-
-- paths are represented as `(times, states)` pairs
-- absorption is implemented through state-dependent local rates
-- at an absorbing boundary, both local jump rates are set to zero
-- once the process reaches an absorbing boundary, it remains there for all later times
-
-
-### Tests
-
-#### 1. `ReflectingContinuousTimeRandomWalk`
-
-```text
-tests/test_reflecting_cont_time_random_walk.py
+```math
+\dot{X}_t = v_0 \cos(\theta_t) + \sqrt{2D_{\mathrm{T}}}\,\eta_x(t)
 ```
 
-Covers:
+```math
+\dot{Y}_t = v_0 \sin(\theta_t) + \sqrt{2D_{\mathrm{T}}}\,\eta_y(t)
+```
+
+```math
+\dot{\theta}_t = \sqrt{2D_{\mathrm{R}}}\,\eta_\theta(t)
+```
+
+where `D_T` is the translational diffusion coefficient and `D_R` is the rotational diffusion coefficient.
+
+**Signature**
+
+```python
+from aleatory.processes import ABP2D
+
+ABP2D(
+    speed=1.0,
+    rotational_diffusion=1.0,
+    translational_diffusion=0.0,
+    T=1.0,
+    x0=0.0,
+    y0=0.0,
+    theta0=0.0,
+    rng=None,
+)
+```
+
+**Arguments**
+
+- `speed`: self-propulsion speed $v_0 \geq 0$
+- `rotational_diffusion`: rotational diffusion coefficient $D_R \geq 0$
+- `translational_diffusion`: translational diffusion coefficient $D_T \geq 0$
+- `T`: end time of the simulation interval
+- `x0`: initial x-coordinate
+- `y0`: initial y-coordinate
+- `theta0`: initial orientation angle
+- `rng`: optional NumPy random number generator
+
+The implementation uses an Euler discretisation on a uniform time grid over `[0, T]`. The planar sample returned by `sample(n)` consists of the coordinate pair `(x, y)`. The most recently simulated orientation path is stored on the instance and can be accessed through `last_theta`, or returned explicitly by `sample_with_orientation(n)`.
+
+
+### B. `RTP2D`
+
+Implements a two-dimensional run-and-tumble particle with self-propulsion, Poisson-distributed tumble events, and optional translational diffusion. Between tumbles, the particle moves ballistically at constant speed in a fixed direction. At each tumble, the orientation is reset instantaneously by drawing a new heading uniformly from `[0, 2π)`.
+
+The process therefore alternates between straight runs and sudden reorientation events. In the discrete-time implementation, a tumble occurs during a timestep `dt` with probability `lambda * dt`, where `lambda` is the tumble rate.
+
+**Signature**
+
+```python
+from aleatory.processes import RTP2D
+
+RTP2D(
+    speed=1.0,
+    tumble_rate=1.0,
+    translational_diffusion=0.0,
+    T=1.0,
+    x0=0.0,
+    y0=0.0,
+    theta0=0.0,
+    rng=None,
+)
+```
+
+**Arguments**
+
+- `speed`: self-propulsion speed $v_0 \geq 0$
+- `tumble_rate`: tumble rate $\lambda \geq 0$
+- `translational_diffusion`: translational diffusion coefficient $D_T \geq 0$
+- `T`: end time of the simulation interval
+- `x0`: initial x-coordinate
+- `y0`: initial y-coordinate
+- `theta0`: initial orientation angle
+- `rng`: optional NumPy random number generator
+
+The planar sample returned by `sample(n)` consists of the coordinate pair `(x, y)`. The most recently simulated orientation path is stored on the instance and can be accessed through `last_theta`, or returned explicitly by `sample_with_orientation(n)`. The indices of the most recent tumble events are also stored on the instance and are available through `last_tumble_indices`.
+
+----
+
+### New Tests
+
+#### 1. `tests/test_reflecting_cont_time_random_walk.py`
+
+Testing: `ReflectingContinuousTimeRandomWalk`
 
 - constructor validation
 - path structure invariants
@@ -205,20 +208,16 @@ Covers:
 - comparison with the unbounded walk in a wide interval
 - basic long-time bounded behaviour checks
 
-Run it from the repository root with:
+Run it from the repo root with:
 
 ```bash
 python -m unittest discover -s tests -p "test_reflecting_cont_time_random_walk.py"
 ```
 
 
-#### 2. `AbsorbingContinuousTimeRandomWalk`
+#### 2. `tests/test_absorbing_cont_time_random_walk.py`
 
-```text
-tests/test_absorbing_cont_time_random_walk.py
-```
-
-Covers:
+Testing: `AbsorbingContinuousTimeRandomWalk`
 
 - constructor validation
 - path structure invariants
@@ -228,7 +227,7 @@ Covers:
 - comparison with the unbounded walk in a wide interval
 - basic long-time absorbing behaviour checks
 
-Run it from the repository root with:
+Run it from the repo root with:
 
 ```bash
 python -m unittest discover -s tests -p "test_absorbing_cont_time_random_walk.py"
