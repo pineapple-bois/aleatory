@@ -72,3 +72,6 @@ from aleatory.processes.multi_dimensional.two_correlated_brownian_motions import
 )
 from aleatory.processes.multi_dimensional.brownian_motion_2d import BM2D
 from aleatory.processes.multi_dimensional.random_walk_2d import RandomWalk2D
+
+from aleatory.processes.multi_dimensional.active_brownian_particle import ABP2D
+from aleatory.processes.multi_dimensional.run_and_tumble_particle import RTP2D
