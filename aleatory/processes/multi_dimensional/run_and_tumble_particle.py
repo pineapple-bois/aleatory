@@ -145,6 +145,19 @@ class RTP2D(StochasticProcess):
             f")"
         )
 
+    def metadata(self):
+        return {
+            "class": self.__class__.__name__,
+            "repr": repr(self),
+            "speed": self.speed,
+            "tumble_rate": self.tumble_rate,
+            "translational_diffusion": self.translational_diffusion,
+            "T": self.T,
+            "x0": self.x0,
+            "y0": self.y0,
+            "theta0": self.theta0,
+        }
+
 
     @property
     def last_theta(self):
@@ -355,6 +368,12 @@ class RTP2D(StochasticProcess):
         ax_tumbles.set_title(tumble_title)
         ax_tumbles.grid(True)
 
+        existing_metadata = getattr(fig, "_aleatory_metadata", None)
+        if existing_metadata is None:
+            fig._aleatory_metadata = {"sources": []}
+
+        fig._aleatory_metadata["sources"].append(self.metadata())
+
         if created_axes:
             fig.tight_layout()
 
@@ -437,5 +456,12 @@ class RTP2D(StochasticProcess):
         ax.legend()
         ax.grid(True)
         ax.axis("equal")
+
+        fig = ax.figure
+        existing_metadata = getattr(fig, "_aleatory_metadata", None)
+        if existing_metadata is None:
+            fig._aleatory_metadata = {"sources": []}
+
+        fig._aleatory_metadata["sources"].append(self.metadata())
 
         return ax
