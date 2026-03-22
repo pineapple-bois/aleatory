@@ -98,7 +98,7 @@ class FigureManager:
 
         paths = []
         for ext in formats:
-            path = self.output_dir / f"{name}.{ext}"
+            path = self.figure_dir / f"{name}.{ext}"
             fig.savefig(
                 path,
                 dpi=self.dpi,
@@ -107,13 +107,15 @@ class FigureManager:
             )
             paths.append(path)
 
+        metadata_path = self._write_metadata_json(fig, name=name, formats=formats)
+
         if close:
             import matplotlib.pyplot as plt
             plt.close(fig)
 
         return {
             "figure_paths": paths,
-            "metadata_path": None,
+            "metadata_path": metadata_path,
             "saved": True,
         }
 
