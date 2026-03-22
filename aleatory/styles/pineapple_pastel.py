@@ -49,7 +49,7 @@ def _base_rcparams():
         "legend.frameon": True,
         "legend.fancybox": True,
         "font.size": 11,
-        "axes.titlesize": 12,
+        "axes.titlesize": 13,
         "axes.labelsize": 11,
         "legend.fontsize": 10,
         "xtick.labelsize": 10,
@@ -78,13 +78,13 @@ def _theme_rcparams(theme):
             "axes.prop_cycle": cycler(
                 "color",
                 [
-                    "#7E8CE0",
-                    "#E59ACB",
-                    "#8FC1A9",
-                    "#F2B880",
-                    "#C3A6E8",
-                    "#8FB8DE",
-                ],
+                    "#0072B2",  # blue
+                    "#D55E00",  # vermillion
+                    "#009E73",  # bluish green
+                    "#CC79A7",  # reddish purple
+                    "#E69F00",  # orange
+                    "#56B4E9",  # sky blue
+                ]
             ),
         }
 
@@ -108,13 +108,13 @@ def _theme_rcparams(theme):
             "axes.prop_cycle": cycler(
                 "color",
                 [
-                    "#A8B4FF",
-                    "#FFB3DE",
-                    "#A9D8C2",
-                    "#FFD0A1",
-                    "#D6BCFF",
-                    "#A8CFF2",
-                ],
+                    "#4EA3E6",
+                    "#FF8C42",
+                    "#3CBF9B",
+                    "#E39ACF",
+                    "#F4C04A",
+                    "#8FD3FF",
+                ]
             ),
         }
 
