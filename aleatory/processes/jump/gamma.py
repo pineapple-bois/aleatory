@@ -138,6 +138,13 @@ class GammaProcess(SPAnalyticalMarginals):
             times = self.times
         return self.nu * times
 
+    def _process_covariance(self, times=None):
+        if times is None:
+            times = self.times
+        t1 = times[:, None]
+        t2 = times[None, :]
+        return self.nu * np.minimum(t1, t2)
+
     def marginal_expectation(self, times=None):
         expectations = self._process_expectation(times=times)
         return expectations
