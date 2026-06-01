@@ -20,7 +20,17 @@ The :py:mod:`aleatory.processes` module provides classes for following stochasti
    CIRProcess                   -- Cox–Ingersoll–Ross (CIR) Process
    CKLSProcess                  -- Chan-Karolyi-Longstaff-Sanders (CKLS) process
    fBM                          -- fractional Brownian Motion
+   ContinuousTimeRandomWalk      -- Continuous-Time Random Walk
+   ReflectingContinuousTimeRandomWalk -- Reflecting Continuous-Time Random Walk
+   AbsorbingContinuousTimeRandomWalk -- Absorbing Continuous-Time Random Walk
    GaltonWatson                 -- Galton-Watson Process
+   GPConstant                   -- Gaussian Process with Constant Kernel
+   GPLinear                     -- Gaussian Process with Linear Kernel
+   GPMatern                     -- Gaussian Process with Matern Kernel
+   GPPeriodic                   -- Gaussian Process with Periodic Kernel
+   GPRBF                        -- Gaussian Process with RBF Kernel
+   GPSquaredExponential         -- Gaussian Process with Squared Exponential Kernel
+   WhiteNoise                   -- Gaussian Process with White Noise Kernel
    GammaProcess                 -- Gamma Process
    GeneralRandomWalk            -- General Random Walk Process
    HawkesProcess                -- Hawkes Process
@@ -30,6 +40,8 @@ The :py:mod:`aleatory.processes` module provides classes for following stochasti
    InhomogeneousPoissonProcess -- Inhomogeneous Poisson Process
    RandomWalk                   -- Random Walk Process
    VarianceGammaProcess         -- Variance Gamma Process
+   ABP2D                        -- Active Brownian Particle in 2D
+   RTP2D                        -- Run-and-Tumble Particle in 2D
 
 """
 
@@ -75,3 +87,13 @@ from aleatory.processes.multi_dimensional.random_walk_2d import RandomWalk2D
 
 from aleatory.processes.multi_dimensional.active_brownian_particle import ABP2D
 from aleatory.processes.multi_dimensional.run_and_tumble_particle import RTP2D
+
+from aleatory.processes.gaussian.gaussian_constant import GPConstant
+from aleatory.processes.gaussian.gaussian_linear import GPLinear
+from aleatory.processes.gaussian.gaussian_matern import GPMatern
+from aleatory.processes.gaussian.gaussian_periodic import GPPeriodic
+from aleatory.processes.gaussian.gaussian_rbf import GPRBF
+from aleatory.processes.gaussian.gaussian_squared_exponential import (
+    GPSquaredExponential,
+)
+from aleatory.processes.gaussian.gaussian_whitenoise import WhiteNoise

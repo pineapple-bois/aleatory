@@ -141,3 +141,9 @@ docs/source/auto_examples/*
 docs/source/processes/*
 docs/source/stats/*
 
+.vscode/settings.json
+.idea/
+.pytest_cache/
+.ipynb_checkpoints/
+.venv
+launch.json

@@ -5,6 +5,12 @@ import numpy as np
 from aleatory.processes.base import StochasticProcess
 from aleatory.utils.plotters import plot_paths, draw_paths
 from aleatory.utils.plotters_marginals import plot_mean_variance
+from aleatory.utils.plotters_covariances import (
+    plot_covariance_matrix,
+    plot_paths_and_kernel,
+    plot_kernel3d,
+)
+
 
 class SPAnalytical(StochasticProcess):
 
@@ -65,6 +71,12 @@ class SPAnalytical(StochasticProcess):
         stds = [np.sqrt(var) for var in variances]
         return stds
 
+    def estimate_covariances(self, times=None):
+        if self._empirical_marginals is None:
+            self._empirical_marginals = self._get_empirical_marginal_samples()
+        empirical_covariances = np.cov(self._empirical_marginals)
+        return empirical_covariances
+
     def estimate_quantiles(self, q):
         if self._empirical_marginals is None:
             self._empirical_marginals = self._get_empirical_marginal_samples()
@@ -90,6 +102,12 @@ class SPAnalytical(StochasticProcess):
     def process_stds(self):
         stds = self._process_stds()
         return stds
+
+    def _process_covariance(self, times=None):
+        return self.estimate_covariances(times=times)
+
+    def process_covariance(self, times=None):
+        return self._process_covariance(times=times)
 
     def _plot_process(self, n, N, T=None, title=None, suptitle=None, **fig_kw):
         """
@@ -149,8 +167,8 @@ class SPAnalytical(StochasticProcess):
         suptitle=None,
         empirical_envelope=False,
         **fig_kw,
-    ):  
-        
+    ):
+
         self.simulate(n, N, T=T)
         expectations = self._process_expectation()
 
@@ -291,16 +309,20 @@ class SPAnalyticalMarginals(SPAnalytical):
         expectations = self._process_expectation(times=times)
         return expectations
 
-    def marginal_variance(self, times):
+    def marginal_variance(self, times=None):
+        if times is None:
+            times = self.times
         variances = self._process_variance(times=times)
         return variances
 
     def marginal_stds(self, times=None):
+        if times is None:
+            times = self.times
         variances = self._process_variance(times=times)
         stds = np.sqrt(variances)
         return stds
-    
-    def _plot_mean_variance(self, times, title=None, **fig_kw):
+
+    def _plot_mean_variance(self, times=None, title=None, **fig_kw):
         """
         Plots the expectation and variance of the process as a function of time.
 
@@ -309,6 +331,9 @@ class SPAnalyticalMarginals(SPAnalytical):
         :param fig_kw: keyword arguments for the figure
         :return:
         """
+
+        if times is None:
+            times = self.times
 
         plot_title = title if title else self.name
 
@@ -322,7 +347,116 @@ class SPAnalyticalMarginals(SPAnalytical):
             **fig_kw,
         )
         return fig
-    
-    def plot_mean_variance(self, times, title=None, **fig_kw):
+
+    def plot_mean_variance(self, times=None, title=None, **fig_kw):
+
+        if times is None:
+            times = self.times
 
         return self._plot_mean_variance(times=times, title=title, **fig_kw)
+
+    def _plot_covariance_matrix(self, times=None, title=None, **fig_kw):
+        """
+        Plots the covariance matrix of the process as a function of time.
+
+        :param list times: list of times to evaluate the covariance matrix
+        :param str title: string optional default to the name of the process
+        :param fig_kw: keyword arguments for the figure
+        :return:
+        """
+
+        if times is None:
+            times = self.times
+
+        plot_title = title if title else self.name
+        covariances = self._process_covariance(times=times)
+
+        fig = plot_covariance_matrix(
+            times=times,
+            covariance_matrix=covariances,
+            title=plot_title,
+            **fig_kw,
+        )
+        return fig
+
+    def plot_covariance(self, times=None, title=None, **fig_kw):
+        if times is None:
+            times = self.times
+
+        return self._plot_covariance_matrix(times=times, title=title, **fig_kw)
+
+    def plot_kernel(
+        self,
+        times=None,
+        colormap="coolwarm",
+        matrix_shape=False,
+        title=None,
+        cbar_labels={"cbar": "Kernel K(t, s)"},
+    ):
+        if title is None:
+            title = f"{self.name} \nKernel Function"
+        return self.plot_covariance(
+            times,
+            colormap=colormap,
+            matrix_shape=matrix_shape,
+            title=title,
+            cbar_labels=cbar_labels,
+        )
+
+    def plot_kernel3d(self, times=None, title=None, **fig_kw):
+        if times is None:
+            npoints = int(100 * self.T)
+            times = np.linspace(0, self.T, npoints)
+        K = self._process_covariance(times)
+
+        style = fig_kw.pop("style", "seaborn-v0_8-whitegrid")
+        fig = plot_kernel3d(times, K, title=title, style=style, **fig_kw)
+        return fig
+
+    def plot_paths_and_kernel(
+        self,
+        n,
+        N,
+        T=None,
+        title=None,
+        cmap="coolwarm",
+        matrix_shape=False,
+        style="seaborn-v0_8-whitegrid",
+        **fig_kw,
+    ):
+        """
+        Plots the paths of the process and the covariance kernel.
+
+        :param int n: number of steps in each path
+        :param int N: number of paths to simulate
+        :param float T: the right hand endpoint of the time interval [0,T]
+        :param str title: string optional default to the name of the process
+        :param str cmap: colormap for the covariance matrix
+        :param bool matrix_shape: whether to plot the covariance matrix in matrix shape
+        :param str style: matplotlib style for the plot
+        :param fig_kw: keyword arguments for the figure
+        :return:
+        """
+        if T:
+            self.T = T
+
+        # if self.times is None or self.paths is None:
+        self.simulate(n, N, T=T)
+
+        times = self.times
+        paths = self.paths
+        covariances = self._process_covariance(times=times)
+
+        plot_title = title if title else self.name
+
+        fig = plot_paths_and_kernel(
+            paths=paths,
+            times=times,
+            covariance_matrix=covariances,
+            title=plot_title,
+            cmap=cmap,
+            matrix_shape=matrix_shape,
+            style=style,
+            **fig_kw,
+        )
+        return fig

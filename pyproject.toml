@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aleatory"
-version = "1.1.1"
+version = "1.2.1"
 authors = [{ name = "Dialid Santiago", email = "d.santiago@outlook.com" }, ]
 description = "Stochastic Processes Simulation and Visualisation"
 readme = "README.md"
@@ -14,7 +14,8 @@ dependencies = ["pandas>=1.5.2",
                 "scipy>=1.9.3",
                 "matplotlib>=3.6.2",
                 "statsmodels>=0.13.5",
-                "parameterized>=0.8.1"
+                "parameterized>=0.8.1",
+                "ipywidgets>=8.0.0",
                 ]
 
 classifiers = ["Programming Language :: Python :: 3",
